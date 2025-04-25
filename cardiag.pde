@@ -10,7 +10,7 @@ void setup(){
     ELMsetup();
 }
 
-String why(String command){
+String elmsend(String command){
     port.write(command);
     int to=0;
     delay(100);
@@ -37,19 +37,19 @@ void ELMsetup(){
     //ats0 spaces off
 
     //atz atl1 ate0 ats0 atsp0 0100 atdp
-    print(why("atz"));
-    //ELMSend("atl1");
-    why("ate0");
-    why("ats0");
-    why("atsp0");
-    why("0100");
-    port.clear();
-    print(why("atdp"));
+    //print(elmsend("atz"));
+    //elmsend("atl1");
+    //elmsend("ate0");
+    //elmsend("ats0");
+    //elmsend("atsp0");
+    //elmsend("0100");
+    //port.clear();
+    //print(elmsend("atdp"));
 }
 
 
 int getrpm(){
-  String ret = why("010c");
+  String ret = elmsend("010c");
   //println(ret.substring(0,min(ret.length(),6)));
   if(ret.substring(0,min(ret.length(),6)).equals("41 0C ")){
     String hexS = ( ret.substring(6,8)+ret.substring(9,11));
@@ -60,7 +60,7 @@ int getrpm(){
   return rpm;
 }
 int getvel(){
-  String ret = why("010d");
+  String ret = elmsend("010d");
   //println(ret.substring(0,min(ret.length(),6)));
   if(ret.substring(0,min(ret.length(),6)).equals("41 0D ")){
     String hexS = ( ret.substring(6,8));
@@ -76,17 +76,23 @@ void draw(){
     textSize(50);
     noStroke();
     fill(255);
-    text("rpm : "+getrpm(),50,50);
-    text("rpm : "+getvel(),50,50);
+    //text("rpm : "+getrpm(),50,50);
+    //text("rpm : "+getvel(),50,50);
+
+    drawGauge(300,300,map(rpm,0,6000,0,1));
+
+
+    delay(50);
+}
+
+void drawGauge(float posx, float posy, float val){
     strokeWeight(10);
-    float angle = map(rpm,0,6000,PI+0.5,-0.5);
+    float angle = map(val,0,1,PI+0.5,-0.5);
     stroke(255,255,255);
     fill(40);
     strokeWeight(5);
-    arc(width/2,height/2,580,580,PI-0.7,2*PI+0.7,PIE);
+    arc(posx,posy,580,580,PI-0.7,2*PI+0.7,PIE);
     
     stroke(255,0,0);
-    line(width/2,height/2,250*cos(angle)+(width/2),-250*sin(angle)+(height/2));
-
-    delay(50);
+    line(posx,posy,250*cos(angle)+(posx),-250*sin(angle)+(posy));
 }
