@@ -3,8 +3,9 @@ import processing.serial.*;
 Serial port;
 int rpm = 0;
 int vel = 0;
+float fuelRate = 0;
 void setup(){
-   // port = new Serial(this, "COM3", 38400);
+    port = new Serial(this, "COM3", 38400);
     //port.bufferuntil('\r');
     size(1600,900);
     //ELMsetup();
@@ -13,15 +14,36 @@ void setup(){
 String elmsend(String command){
     port.clear();
     port.write(command);
-    int to=0;
-    while(1>port.available()){
-        delay(1);
-        to++;
-        if(to > 5000){
-            return "timeout";
-        }
+   // print("\nsending: "+command+"    got : ");
+    String ans = "";
+    int to = 0;
+    while(port.available() == 0){
+      to++;
+      if (to > 5000){
+        print ("timeout");
+        return "TO";
+      }
+      delay(1);
     }
-    return port.readStringUntil('>');
+    to = 0;
+    int c = 0;
+    while(to < 100){
+      if(port.available() > 0){
+        char next = char(port.read());
+        if (c>command.length()){ 
+          ans = ans+next;
+        }
+        c++;
+        to = 0;
+      }
+      delay(1);
+      to++;
+      
+    }
+    
+    port.clear();
+    //print(ans);
+    return ans;
 }
 
 void ELMsetup(){
@@ -54,7 +76,7 @@ void ELMsetup(){
     //atz atl1 ate0 ats0 atsp0 0100 atdp
     print(elmsend("atz"));
     
-    elmsend("atl1");
+    //elmsend("atl1");
     elmsend("ate0");
     //elmsend("ats0");
     //elmsend("atsp0");
@@ -65,7 +87,7 @@ void ELMsetup(){
 
 
 int getrpm(){
-  String ret = elmsend("010c");
+  String ret =""+elmsend("010c");
   //println(ret.substring(0,min(ret.length(),6)));
   if(ret.substring(0,min(ret.length(),6)).equals("41 0C ")){
     String hexS = ( ret.substring(6,8)+ret.substring(9,11));
@@ -75,12 +97,22 @@ int getrpm(){
   }
   return rpm;
 }
+float getfuelRate(){
+  String ret =""+elmsend("0142");
+  //println(ret.substring(0,min(ret.length(),6)));
+  if(ret.substring(0,min(ret.length(),6)).equals("41 0C ")){
+    String hexS = ( ret.substring(6,8)+ret.substring(9,11));
+    
+    fuelRate= unhex(hexS)/1000 ;
+    
+  }
+  return fuelRate;
+}
 int getvel(){
-  String ret = elmsend("010d");
+  String ret = ""+elmsend("010d");
   //println(ret.substring(0,min(ret.length(),6)));
   if(ret.substring(0,min(ret.length(),6)).equals("41 0D ")){
-    String hexS = ( ret.substring(6,8));
-    
+    String hexS = ret.substring(6,8);
     vel= unhex(hexS) ;
     
   }
@@ -93,12 +125,28 @@ void draw(){
     noStroke();
     fill(255);
     //text("rpm : "+getrpm(),50,50);
-    //text("rpm : "+getvel(),50,50);
+    //text("vel : "+getvel(),50,100);
+    
 
-    drawGauge(300,300,map(rpm,0,6000,0,1));
+    drawGauge(300,500,map(rpm,0,6000,0,1));
+    drawGauge(1100,500,map(vel,0,180,0,1));
 
+    
 
     delay(50);
+}
+
+void keyPressed(){
+  float trpm = getrpm();
+  float tvel = getvel();
+  
+  print(key);
+  print(" ");
+  print(trpm);
+  print(" ");
+  print(tvel);
+  print(" ");
+  println(trpm / tvel);
 }
 
 void drawGauge(float posx, float posy, float val){
